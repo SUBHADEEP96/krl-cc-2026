@@ -1,0 +1,4 @@
+import {describe,expect,it} from 'vitest';
+import {seed} from '../../data';
+import {regionDefinitions} from './region-config';
+describe('regional team configuration',()=>{it('defines 15 unique teams with imported logos',()=>{expect(regionDefinitions).toHaveLength(15);expect(new Set(regionDefinitions.map(region=>region.id)).size).toBe(15);expect(new Set(regionDefinitions.map(region=>region.name)).size).toBe(15);expect(regionDefinitions.every(region=>Boolean(region.logo))).toBe(true)});it('uses only canonical region names for every seeded farm',()=>{const names=new Set(regionDefinitions.map(region=>region.name));const farms=seed().farms;expect(farms).toHaveLength(5292);expect(farms.every(farm=>names.has(farm.region))).toBe(true);expect(names.has('Terai Tuskers')).toBe(true);expect(names.has('Dooars Tuskers')).toBe(false);expect(names.has('Bardhaman Bigha Kings')).toBe(true);expect(names.has('Bardhaman Krishi Kings')).toBe(false)})});

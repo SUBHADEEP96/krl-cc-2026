@@ -31,3 +31,7 @@ Build `dist/` and serve it with SPA fallback to `index.html`. Apply SQL in `supa
 ## Prototype limitations
 
 The prototype uses a stylised accessible map surface rather than downloading third-party tiles, simulated evidence uploads, synthetic identities, and local-only authentication. It does not process payments, run background jobs, provide true offline conflict resolution, or upload evidence binaries. Bengali covers the main navigation; production requires a complete translation review. See `docs/production-roadmap.md`.
+
+## Regional logo assets
+
+Regional team logos live in `src/assets/regions` and use a two-digit league-order prefix followed by the team's lowercase kebab-case name (for example, `01-himalayan-giants.png`). The typed source of truth is `src/features/regions/region-config.ts`, which maps stable IDs, display names, districts, accessible labels and imported assets. To replace artwork, overwrite the matching PNG without cropping or recolouring it. Assets are imported from `src` so Vite validates, fingerprints and bundles them. When adding or renaming a team, update the central configuration (and any persisted-data migration) rather than duplicating metadata in a screen.
