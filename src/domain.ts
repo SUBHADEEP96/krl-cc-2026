@@ -1,0 +1,17 @@
+import { z } from 'zod';
+export const roles=['Super Admin','Programme Director','Regional Manager','District Coordinator','Field Officer','Mentor','Auditor','Judge','Finance Manager','Content Manager','Sponsor Viewer','Farmer','Public Visitor'] as const;
+export type Role=typeof roles[number];
+export const statuses=['Draft application','Submitted','Under review','Verification scheduled','Verified','Selected','Waitlisted','Rejected','Baseline pending','Planning','Active','At risk','Audit due','Judging','Completed','Awarded','Withdrawn'] as const;
+export type Status=typeof statuses[number];
+export type Pillar='Satya'|'Mangal'|'Sundar'|'Samriddhi';
+export interface Farm {id:string;passportId:string;farmer:string;region:string;district:string;constituency:string;village:string;type:string;crop:string;enterprises:string[];status:Status;score:number;baseline:number;verified:boolean;lat:number;lng:number;lastUpdate:string;mentor:string;openIssues:number;pillars:Record<Pillar,number>}
+export interface Activity {id:string;farmId:string;kind:string;summary:string;date:string}
+export interface DemoState {farms:Farm[];activities:Activity[];visits:number;approved:string[]}
+export const progressSchema=z.object({summary:z.string().min(10),work:z.string().min(5),stage:z.string().min(1),kpi:z.coerce.number().min(0).max(100),next:z.string().min(3)});
+export const visitSchema=z.object({purpose:z.string().min(3),observations:z.string().min(8),recommendations:z.string().min(5),acknowledged:z.boolean()});
+export const transitionMap:Record<Status,readonly Status[]>={
+ 'Draft application':['Submitted','Withdrawn'],'Submitted':['Under review','Withdrawn'],'Under review':['Verification scheduled','Waitlisted','Rejected'],'Verification scheduled':['Verified'],'Verified':['Selected','Waitlisted'],'Selected':['Baseline pending'],'Waitlisted':['Selected','Rejected'],'Rejected':[],'Baseline pending':['Planning'],'Planning':['Active'],'Active':['At risk','Audit due','Judging','Withdrawn'],'At risk':['Active','Audit due'],'Audit due':['Judging','Active'],'Judging':['Completed','Active'],'Completed':['Awarded'],'Awarded':[],'Withdrawn':[]};
+export const canTransition=(a:Status,b:Status)=>transitionMap[a].includes(b);
+export const permissions={canEditProgress:(role:Role)=>['Super Admin','Programme Director','Regional Manager','Field Officer','Mentor'].includes(role),canApproveScore:(role:Role)=>['Super Admin','Judge'].includes(role),canViewFunding:(role:Role)=>!['Mentor','Farmer','Public Visitor'].includes(role)};
+export function scorePillars(values:Partial<Record<Pillar,{score:number;weight:number;applicable:boolean;verified:boolean}[]>>){const out={} as Record<Pillar,number|null>; let verified=true; for(const p of ['Satya','Mangal','Sundar','Samriddhi'] as Pillar[]){const rows=(values[p]??[]).filter(x=>x.applicable);if(rows.some(x=>!x.verified))verified=false; const valid=rows.filter(x=>x.verified);const w=valid.reduce((s,x)=>s+x.weight,0);out[p]=w?Math.round(valid.reduce((s,x)=>s+x.score*x.weight,0)/w*10)/10:null}const weights={Satya:.3,Mangal:.25,Sundar:.2,Samriddhi:.25};const complete=Object.values(out).every(x=>x!==null);const final=complete?Math.round((Object.entries(weights) as [Pillar,number][]).reduce((s,[p,w])=>s+(out[p]??0)*w,0)*10)/10:null;return {pillars:out,final,verified:verified&&complete}}
+export function publicFarm(f:Farm){return {passportId:f.passportId,region:f.region,district:f.district,type:f.type,crop:f.crop,enterprises:f.enterprises,pillars:f.pillars,score:f.verified?f.score:null,status:f.status}}
